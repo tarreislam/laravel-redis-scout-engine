@@ -17,28 +17,26 @@ use Tarre\RedisScoutEngine\Cache;
 class RedisSearchService
 {
     protected $redis;
-    protected $prefix = 'redis-scout-engine.';
 
     public function __construct()
     {
         $this->redis = RedisFacade::connection();
-
     }
 
     /**
      * @param Builder $builder
      * @param $skip
      * @param $take
+     * @param int $count
      * @return LazyCollection
      */
-    public function getResult(Builder $builder, $skip, $take, &$count = 0)
+    public function search($fqdn, Builder $builder, $skip, $take, &$count = 0)
     {
-        $fqdn = $this->getClassSearchableFqdn($builder->model);
         Cache::init($fqdn);
         /*
          * Initialize lazy collection
          */
-        $lc = LazyCollection::make($this->yeetKeysFromFqdn($fqdn));
+        $lc = LazyCollection::make($this->allKeys($fqdn));
         /*
          * Handle wheres
          */
@@ -86,10 +84,27 @@ class RedisSearchService
 
     /**
      * @param $fqdn
+     */
+    public function del($fqdn)
+    {
+        $this->redis->del($fqdn);
+    }
+
+    /**
+     * @param callable $fn
+     * @return array|Redis
+     */
+    public function pipeline(callable $fn)
+    {
+        return $this->redis->pipeline($fn);
+    }
+
+    /**
+     * @param $fqdn
      * @param $key
      * @return mixed
      */
-    public function hGetAssoc($fqdn, $key)
+    protected function hGetAssoc($fqdn, $key)
     {
         return json_decode($this->hGet($fqdn, $key), true);
     }
@@ -99,7 +114,7 @@ class RedisSearchService
      * @param $key
      * @return false|mixed|string|null
      */
-    public function hGet($fqdn, $key)
+    protected function hGet($fqdn, $key)
     {
         if ($res = Cache::g($fqdn, $key)) {
             return $res;
@@ -114,60 +129,17 @@ class RedisSearchService
 
     /**
      * @param $fqdn
-     * @return \Generator
-     */
-    public function yeetKeysFromFqdn($fqdn)
-    {
-        $keys = $this->allKeys($fqdn);
-
-        foreach ($keys as $key) {
-            yield $key;
-        }
-    }
-
-    /**
-     * @param $fqdn
      * @return array
      */
-    public function allKeys($fqdn): array
+    protected function allKeys($fqdn): array
     {
         return $this->redis->hKeys($fqdn);
     }
 
     /**
-     * @param Builder $builder
-     * @return int
-     */
-    public function getLimitFromBuilder(Builder $builder)
-    {
-        return $builder->limit ?: $builder->model->getPerPage();
-    }
-
-    /**
-     * @param Model $model
-     * @return string
-     */
-    public function getClassSearchableFqdn(Model $model): string
-    {
-        return $this->prefix . $model->searchableAs();
-    }
-
-    /**
-     * @param Collection $models
-     * @param callable $fn
-     */
-    public function pipelineModels(Collection $models, callable $fn)
-    {
-        $this->redis->pipeline(function (Redis $pipe) use (&$models, $fn) {
-            $models->each(function (Model &$model) use (&$pipe, $fn) {
-                $modelKey = $this->getClassSearchableFqdn($model);
-                $fn($modelKey, $model, $pipe);
-            });
-        });
-    }
-
-    /*
-     * Filter helpers
+     * @param $query
+     * @param $fqdn
+     * @return \Closure
      */
     protected function filterSearch($query, $fqdn)
     {
@@ -177,6 +149,11 @@ class RedisSearchService
         };
     }
 
+    /**
+     * @param array $wheres
+     * @param $fqdn
+     * @return \Closure
+     */
     protected function filter(array $wheres, $fqdn)
     {
         return function ($key) use ($wheres, $fqdn) {
@@ -196,6 +173,11 @@ class RedisSearchService
         };
     }
 
+    /**
+     * @param array $whereIns
+     * @param $fqdn
+     * @return \Closure
+     */
     protected function filterArray(array $whereIns, $fqdn)
     {
         return function ($key) use ($whereIns, $fqdn) {
@@ -215,6 +197,11 @@ class RedisSearchService
         };
     }
 
+    /**
+     * @param $fqdn
+     * @param $sortBy
+     * @return \Closure
+     */
     protected function sortBy($fqdn, $sortBy)
     {
         return function ($key) use ($fqdn, $sortBy) {
@@ -223,5 +210,4 @@ class RedisSearchService
             return $m[$sortBy];
         };
     }
-
 }

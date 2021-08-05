@@ -12,6 +12,9 @@ use Tarre\RedisScoutEngine\Service\RedisSearchService;
 /**
  * @property RedisSearchService rss
  */
+/*
+ * "jkuhyuij <A" -Björn
+ */
 abstract class Engine extends BaseEngine
 {
     protected $rss;

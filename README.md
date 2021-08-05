@@ -19,6 +19,10 @@ composer require tarre/laravel-redis-scout-engine
 *.env*
 ```
 SCOUT_DRIVER=redis
+
+REDIS_HOST=....
+REDIS_PASSWORD=null
+REDIS_PORT=6379
 ```
 
 *services.php*

@@ -30,7 +30,7 @@ class RedisSearchService
      * @param int $count
      * @return LazyCollection
      */
-    public function search(string $fqdn, string $query, array $wheres, array $whereIns, array $orders, $skip, $take, &$count)
+    public function search(string $fqdn, $query, array $wheres, array $whereIns, array $orders, $skip, $take, &$count)
     {
         Cache::init($fqdn);
         /*

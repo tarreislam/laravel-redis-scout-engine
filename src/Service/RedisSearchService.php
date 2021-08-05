@@ -10,7 +10,6 @@ use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Redis;
 use Tarre\RedisScoutEngine\Cache;
-use Tarre\RedisScoutEngine\Helper;
 
 /**
  * @property \Illuminate\Redis\Connections\PhpRedisConnection redis
@@ -32,7 +31,7 @@ class RedisSearchService
      * @param $take
      * @return LazyCollection
      */
-    public  function getResult(Builder $builder, $skip, $take, &$count = 0)
+    public function getResult(Builder $builder, $skip, $take, &$count = 0)
     {
         $fqdn = $this->getClassSearchableFqdn($builder->model);
         Cache::init($fqdn);
@@ -44,13 +43,13 @@ class RedisSearchService
          * Handle wheres
          */
         if (!!$builder->wheres) {
-            $lc = $lc->filter(Helper::filter($this, $builder, $fqdn));
+            $lc = $lc->filter($this->filter($builder->wheres, $fqdn));
         }
         /*
          * Handle whereIns
          */
         if (!!$builder->whereIns) {
-            $lc = $lc->filter(Helper::filterArray($this, $builder, $fqdn));
+            $lc = $lc->filter($this->filterArray($builder->whereIns, $fqdn));
         }
         /*
          * Handle orders
@@ -58,10 +57,10 @@ class RedisSearchService
         foreach ($builder->orders as $order) {
             switch ($order['direction']) {
                 case 'asc':
-                    $lc = $lc->sortBy(Helper::sortBy($this, $builder, $fqdn, $order['column']));
+                    $lc = $lc->sortBy($this->sortBy($fqdn, $order['column']));
                     break;
                 case 'desc':
-                    $lc = $lc->sortByDesc(Helper::sortBy($this, $builder, $fqdn, $order['column']));
+                    $lc = $lc->sortByDesc($this->sortBy($fqdn, $order['column']));
                     break;
             }
         }
@@ -69,7 +68,7 @@ class RedisSearchService
          * Handle searches
          */
         if ($builder->query) {
-            $lc = $lc->filter(Helper::search($this, $builder, $fqdn));
+            $lc = $lc->filter($this->filterSearch($builder->query, $fqdn));
         }
         /*
          * Update count result
@@ -100,7 +99,7 @@ class RedisSearchService
      * @param $key
      * @return false|mixed|string|null
      */
-    public  function hGet($fqdn, $key)
+    public function hGet($fqdn, $key)
     {
         if ($res = Cache::g($fqdn, $key)) {
             return $res;
@@ -117,7 +116,7 @@ class RedisSearchService
      * @param $fqdn
      * @return \Generator
      */
-    public  function yeetKeysFromFqdn($fqdn)
+    public function yeetKeysFromFqdn($fqdn)
     {
         $keys = $this->allKeys($fqdn);
 
@@ -130,7 +129,7 @@ class RedisSearchService
      * @param $fqdn
      * @return array
      */
-    public  function allKeys($fqdn): array
+    public function allKeys($fqdn): array
     {
         return $this->redis->hKeys($fqdn);
     }
@@ -139,7 +138,7 @@ class RedisSearchService
      * @param Builder $builder
      * @return int
      */
-    public  function getLimitFromBuilder(Builder $builder)
+    public function getLimitFromBuilder(Builder $builder)
     {
         return $builder->limit ?: $builder->model->getPerPage();
     }
@@ -148,7 +147,7 @@ class RedisSearchService
      * @param Model $model
      * @return string
      */
-    public  function getClassSearchableFqdn(Model $model): string
+    public function getClassSearchableFqdn(Model $model): string
     {
         return $this->prefix . $model->searchableAs();
     }
@@ -165,6 +164,64 @@ class RedisSearchService
                 $fn($modelKey, $model, $pipe);
             });
         });
+    }
+
+    /*
+     * Filter helpers
+     */
+    protected function filterSearch($query, $fqdn)
+    {
+        return function ($key) use ($query, $fqdn) {
+            $res = $this->hget($fqdn, $key);
+            return stripos($res, $query) !== false;
+        };
+    }
+
+    protected function filter(array $wheres, $fqdn)
+    {
+        return function ($key) use ($wheres, $fqdn) {
+            $m = $this->hGetAssoc($fqdn, $key);
+            /*
+             * Check if at least one condition failed, then we abort
+             */
+            foreach ($wheres as $key => $value) {
+                if ($m[$key] !== $value) {
+                    return false;
+                }
+            }
+            /*
+             * All conditions passed
+             */
+            return true;
+        };
+    }
+
+    protected function filterArray(array $whereIns, $fqdn)
+    {
+        return function ($key) use ($whereIns, $fqdn) {
+            $m = $this->hGetAssoc($fqdn, $key);
+            /*
+             * Check if at least one condition failed, then we abort
+             */
+            foreach ($whereIns as $key => $value) {
+                if (!in_array($m[$key], $value)) {
+                    return false;
+                }
+            }
+            /*
+             * All conditions passed
+             */
+            return true;
+        };
+    }
+
+    protected function sortBy($fqdn, $sortBy)
+    {
+        return function ($key) use ($fqdn, $sortBy) {
+            $m = $this->hGetAssoc($fqdn, $key);
+
+            return $m[$sortBy];
+        };
     }
 
 }

@@ -1,5 +1,5 @@
 {
-    "name": "tarre/redis-scout-engine",
+    "name": "tarre/laravel-redis-scout-engine",
     "description": "Redis engine for Laravel Scout",
     "type": "library",
     "license": "MIT",

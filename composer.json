@@ -14,5 +14,12 @@
     "require": {
         "laravel/scout": "^6.0|^7.0|^8.0|^9.0",
         "predis/predis": "^1.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Tarre\\RedisScoutEngine\\ServiceProvider"
+            ]
+        }
     }
 }

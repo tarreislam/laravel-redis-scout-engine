@@ -154,17 +154,17 @@ class RedisSearchService
         return function ($pair) use ($whereIns) {
             $m = $pair['assoc'];
             /*
-             * Check if at least one condition failed, then we abort
+             * if anything present in the array, we allow
              */
             foreach ($whereIns as $key => $value) {
-                if (!in_array($m[$key], $value)) {
-                    return false;
+                if (in_array($m[$key], $value)) {
+                    return true;
                 }
             }
             /*
-             * All conditions passed
+             * ignore record
              */
-            return true;
+            return false;
         };
     }
 

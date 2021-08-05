@@ -1,0 +1,18 @@
+{
+    "name": "tarre/redis-scout-engine",
+    "description": "Redis engine for Laravel Scout",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tariqul Islam",
+            "email": "tarre.islam@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "laravel/scout": "^6.0|^7.0|^8.0|^9.0",
+        "predis/predis": "^1.0"
+    }
+}

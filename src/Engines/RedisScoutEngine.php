@@ -38,8 +38,17 @@ class RedisScoutEngine extends Engine
     {
         $skip = $perPage * ($page - 1);
         $take = $perPage;
+        $fqdn = $this->getClassSearchableFqdn($builder->model);
 
-        $results = $this->rss->search($this->getClassSearchableFqdn($builder->model), $builder, $skip, $take, $count);
+        $results = $this->rss->search(
+            $fqdn,
+            $builder->query,
+            $builder->wheres,
+            $builder->whereIns,
+            $builder->orders,
+            $skip,
+            $take,
+            $count);
 
         return [
             'results' => $results,

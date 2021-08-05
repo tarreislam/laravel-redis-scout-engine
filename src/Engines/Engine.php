@@ -5,7 +5,6 @@ namespace Tarre\RedisScoutEngine\Engines;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Scout\Builder;
 use Laravel\Scout\Engines\Engine as BaseEngine;
 use Redis;
 use Tarre\RedisScoutEngine\Service\RedisSearchService;

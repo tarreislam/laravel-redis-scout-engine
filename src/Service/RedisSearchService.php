@@ -23,14 +23,19 @@ class RedisSearchService
         $this->redis = RedisFacade::connection();
     }
 
+
     /**
-     * @param Builder $builder
+     * @param string $fqdn
+     * @param string $query
+     * @param array $wheres
+     * @param array $whereIns
+     * @param array $orders
      * @param $skip
      * @param $take
      * @param int $count
      * @return LazyCollection
      */
-    public function search($fqdn, Builder $builder, $skip, $take, &$count = 0)
+    public function search(string $fqdn, string $query, array $wheres, array $whereIns, array $orders, $skip, $take, &$count)
     {
         Cache::init($fqdn);
         /*
@@ -40,19 +45,19 @@ class RedisSearchService
         /*
          * Handle wheres
          */
-        if (!!$builder->wheres) {
-            $lc = $lc->filter($this->filter($builder->wheres, $fqdn));
+        if (!!$wheres) {
+            $lc = $lc->filter($this->filter($wheres, $fqdn));
         }
         /*
          * Handle whereIns
          */
-        if (!!$builder->whereIns) {
-            $lc = $lc->filter($this->filterArray($builder->whereIns, $fqdn));
+        if ($whereIns) {
+            $lc = $lc->filter($this->filterArray($whereIns, $fqdn));
         }
         /*
          * Handle orders
          */
-        foreach ($builder->orders as $order) {
+        foreach ($orders as $order) {
             switch ($order['direction']) {
                 case 'asc':
                     $lc = $lc->sortBy($this->sortBy($fqdn, $order['column']));
@@ -65,8 +70,8 @@ class RedisSearchService
         /*
          * Handle searches
          */
-        if ($builder->query) {
-            $lc = $lc->filter($this->filterSearch($builder->query, $fqdn));
+        if ($query) {
+            $lc = $lc->filter($this->filterSearch($query, $fqdn));
         }
         /*
          * Update count result

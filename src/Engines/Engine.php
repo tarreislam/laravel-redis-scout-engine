@@ -37,7 +37,7 @@ abstract class Engine extends BaseEngine
      */
     public function pipelineModels(Collection $models, callable $fn)
     {
-        $this->rss->pipeline(function (Redis $pipe) use (&$models, $fn) {
+        $this->rss->redis()->pipeline(function (Redis $pipe) use (&$models, $fn) {
             $models->each(function (Model &$model) use (&$pipe, $fn) {
                 $modelKey = $this->getClassSearchableFqdn($model);
                 $fn($modelKey, $model, $pipe);

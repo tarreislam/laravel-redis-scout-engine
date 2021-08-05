@@ -3,26 +3,21 @@
 
 namespace Tarre\RedisScoutEngine\Service;
 
-use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Redis as RedisFacade;
+use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Support\LazyCollection;
-use Laravel\Scout\Builder;
-use Redis;
 use Tarre\RedisScoutEngine\Cache;
 
 /**
- * @property \Illuminate\Redis\Connections\PhpRedisConnection redis
+ * @property \Illuminate\Redis\Connections\PhpRedisConnection $redisInstance
  */
 class RedisSearchService
 {
-    protected $redis;
+    protected $redisInstance;
 
-    public function __construct()
+    public function __construct(PhpRedisConnection $redisInstance)
     {
-        $this->redis = RedisFacade::connection();
+        $this->redisInstance = $redisInstance;
     }
-
 
     /**
      * @param string $fqdn
@@ -41,7 +36,7 @@ class RedisSearchService
         /*
          * Initialize lazy collection
          */
-        $lc = LazyCollection::make($this->allKeys($fqdn));
+        $lc = LazyCollection::make($this->hKeys($fqdn));
         /*
          * Handle wheres
          */
@@ -51,7 +46,7 @@ class RedisSearchService
         /*
          * Handle whereIns
          */
-        if ($whereIns) {
+        if (!!$whereIns) {
             $lc = $lc->filter($this->filterArray($whereIns, $fqdn));
         }
         /*
@@ -74,11 +69,11 @@ class RedisSearchService
             $lc = $lc->filter($this->filterSearch($query, $fqdn));
         }
         /*
-         * Update count result
+         * Get count of results
          */
         $count = $lc->count();
         /*
-         * Return result
+         * Slice and return
          */
         return $lc
             ->slice($skip, $take)
@@ -88,20 +83,12 @@ class RedisSearchService
     }
 
     /**
-     * @param $fqdn
+     * The redis instance for the service
+     * @return \Illuminate\Redis\Connections\PhpRedisConnection
      */
-    public function del($fqdn)
+    public function redis()
     {
-        $this->redis->del($fqdn);
-    }
-
-    /**
-     * @param callable $fn
-     * @return array|Redis
-     */
-    public function pipeline(callable $fn)
-    {
-        return $this->redis->pipeline($fn);
+        return $this->redisInstance;
     }
 
     /**
@@ -125,7 +112,7 @@ class RedisSearchService
             return $res;
         }
 
-        $res = $this->redis->hGet($fqdn, $key);
+        $res = $this->redisInstance->hGet($fqdn, $key);
 
         Cache::s($fqdn, $key, $res);
 
@@ -136,9 +123,9 @@ class RedisSearchService
      * @param $fqdn
      * @return array
      */
-    protected function allKeys($fqdn): array
+    protected function hKeys($fqdn): array
     {
-        return $this->redis->hKeys($fqdn);
+        return $this->redisInstance->hKeys($fqdn);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace Tarre\RedisScoutEngine;
 
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider as BaseProvider;
 use Laravel\Scout\EngineManager;
 use Tarre\RedisScoutEngine\Engines\RedisScoutEngine;
@@ -12,7 +13,18 @@ class ServiceProvider extends BaseProvider
     public function boot()
     {
         resolve(EngineManager::class)->extend('redis', function () {
-            return new RedisScoutEngine(new RedisSearchService);
+            /*
+             * Create redis instance for engine
+             */
+            $redis = Redis::connection(config('scout-redis.connection'));
+            /*
+             * Create Redis Search service with the given redis instance
+             */
+            $rss = new RedisSearchService($redis);
+            /*
+             * Return Scout engine with redis search service
+             */
+            return new RedisScoutEngine($rss);
         });
     }
 

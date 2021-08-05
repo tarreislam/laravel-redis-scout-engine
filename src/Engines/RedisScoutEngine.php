@@ -40,15 +40,18 @@ class RedisScoutEngine extends Engine
         $take = $perPage;
         $fqdn = $this->getClassSearchableFqdn($builder->model);
 
-        $results = $this->rss->search(
-            $fqdn,
-            $builder->query,
-            $builder->wheres,
-            $builder->whereIns,
-            $builder->orders,
-            $skip,
-            $take,
-            $count);
+        $results = $this
+            ->rss
+            ->search(
+                $fqdn,
+                $builder->query,
+                $builder->wheres,
+                $builder->whereIns,
+                $builder->orders,
+                $skip,
+                $take,
+                $count
+            );
 
         return [
             'results' => $results,
@@ -79,7 +82,7 @@ class RedisScoutEngine extends Engine
 
     public function flush($model)
     {
-        $this->rss->del($this->getClassSearchableFqdn($model));
+        $this->rss->redis()->del($this->getClassSearchableFqdn($model));
     }
 
     public function createIndex($name, array $options = [])

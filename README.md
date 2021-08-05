@@ -6,7 +6,7 @@
 </p>
 
 ## About Laravel Redis Scout engine
-Since no proper Redis engine was available for Laravel Scout I created one. Tested with ~10k records, response time was ~2 sec
+Since no proper Redis engine was available for Laravel Scout I created one. Tested with ~10k records, response time was ~0.1 sec on local redis instance
 
 ### Installation
 

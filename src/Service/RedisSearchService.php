@@ -5,7 +5,6 @@ namespace Tarre\RedisScoutEngine\Service;
 
 use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Support\LazyCollection;
-use Tarre\RedisScoutEngine\Cache;
 
 /**
  * @property \Illuminate\Redis\Connections\PhpRedisConnection $redisInstance
@@ -32,22 +31,21 @@ class RedisSearchService
      */
     public function search(string $fqdn, $query, array $wheres, array $whereIns, array $orders, $skip, $take, &$count)
     {
-        Cache::init($fqdn);
         /*
          * Initialize lazy collection
          */
-        $lc = LazyCollection::make($this->hKeys($fqdn));
+        $lc = LazyCollection::make($this->hGetAll($fqdn))->map($this->mapRes());
         /*
          * Handle wheres
          */
         if (!!$wheres) {
-            $lc = $lc->filter($this->filter($wheres, $fqdn));
+            $lc = $lc->filter($this->filter($wheres));
         }
         /*
          * Handle whereIns
          */
         if (!!$whereIns) {
-            $lc = $lc->filter($this->filterArray($whereIns, $fqdn));
+            $lc = $lc->filter($this->filterArray($whereIns));
         }
         /*
          * Handle orders
@@ -55,10 +53,10 @@ class RedisSearchService
         foreach ($orders as $order) {
             switch ($order['direction']) {
                 case 'asc':
-                    $lc = $lc->sortBy($this->sortBy($fqdn, $order['column']));
+                    $lc = $lc->sortBy($this->sortBy($order['column']));
                     break;
                 case 'desc':
-                    $lc = $lc->sortByDesc($this->sortBy($fqdn, $order['column']));
+                    $lc = $lc->sortByDesc($this->sortBy($order['column']));
                     break;
             }
         }
@@ -66,7 +64,7 @@ class RedisSearchService
          * Handle searches
          */
         if ($query) {
-            $lc = $lc->filter($this->filterSearch($query, $fqdn));
+            $lc = $lc->filter($this->filterSearch($query));
         }
         /*
          * Get count of results
@@ -77,9 +75,8 @@ class RedisSearchService
          */
         return $lc
             ->slice($skip, $take)
-            ->map(function ($key) use ($fqdn) {
-                return $this->hGetAssoc($fqdn, $key);
-            })->values();
+            ->pluck('assoc')
+            ->values();
     }
 
     /**
@@ -93,63 +90,46 @@ class RedisSearchService
 
     /**
      * @param $fqdn
-     * @param $key
-     * @return mixed
-     */
-    protected function hGetAssoc($fqdn, $key)
-    {
-        return json_decode($this->hGet($fqdn, $key), true);
-    }
-
-    /**
-     * @param $fqdn
-     * @param $key
-     * @return false|mixed|string|null
-     */
-    protected function hGet($fqdn, $key)
-    {
-        if ($res = Cache::g($fqdn, $key)) {
-            return $res;
-        }
-
-        $res = $this->redisInstance->hGet($fqdn, $key);
-
-        Cache::s($fqdn, $key, $res);
-
-        return $res;
-    }
-
-    /**
-     * @param $fqdn
      * @return array
      */
-    protected function hKeys($fqdn): array
+    protected function hGetAll($fqdn): array
     {
-        return $this->redisInstance->hKeys($fqdn);
+        return $this->redisInstance->hGetAll($fqdn);
+    }
+
+    /**
+     * @return \Closure
+     */
+    protected function mapRes()
+    {
+        return function ($res) {
+            return [
+                'res' => $res,
+                'assoc' => json_decode($res, true)
+            ];
+        };
     }
 
     /**
      * @param $query
-     * @param $fqdn
      * @return \Closure
      */
-    protected function filterSearch($query, $fqdn)
+    protected function filterSearch($query)
     {
-        return function ($key) use ($query, $fqdn) {
-            $res = $this->hget($fqdn, $key);
+        return function ($pair) use ($query) {
+            $res = $pair['res'];
             return stripos($res, $query) !== false;
         };
     }
 
     /**
      * @param array $wheres
-     * @param $fqdn
      * @return \Closure
      */
-    protected function filter(array $wheres, $fqdn)
+    protected function filter(array $wheres)
     {
-        return function ($key) use ($wheres, $fqdn) {
-            $m = $this->hGetAssoc($fqdn, $key);
+        return function ($pair) use ($wheres) {
+            $m = $pair['assoc'];
             /*
              * Check if at least one condition failed, then we abort
              */
@@ -167,13 +147,12 @@ class RedisSearchService
 
     /**
      * @param array $whereIns
-     * @param $fqdn
      * @return \Closure
      */
-    protected function filterArray(array $whereIns, $fqdn)
+    protected function filterArray(array $whereIns)
     {
-        return function ($key) use ($whereIns, $fqdn) {
-            $m = $this->hGetAssoc($fqdn, $key);
+        return function ($pair) use ($whereIns) {
+            $m = $pair['assoc'];
             /*
              * Check if at least one condition failed, then we abort
              */
@@ -190,14 +169,13 @@ class RedisSearchService
     }
 
     /**
-     * @param $fqdn
      * @param $sortBy
      * @return \Closure
      */
-    protected function sortBy($fqdn, $sortBy)
+    protected function sortBy($sortBy)
     {
-        return function ($key) use ($fqdn, $sortBy) {
-            $m = $this->hGetAssoc($fqdn, $key);
+        return function ($pair) use ($sortBy) {
+            $m = $pair['assoc'];
 
             return $m[$sortBy];
         };

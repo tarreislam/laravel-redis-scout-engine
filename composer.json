@@ -9,6 +9,11 @@
             "email": "tarre.islam@gmail.com"
         }
     ],
+    "autoload": {
+        "psr-4": {
+            "Tarre\\RedisScoutEngine\\": "src/"
+        }
+    },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {

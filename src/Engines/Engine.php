@@ -27,6 +27,10 @@ abstract class Engine extends BaseEngine
         $this->rss = $rss;
     }
 
+    /**
+     * @param Model $model
+     * @return bool
+     */
     protected function modelHasSoftDeletes(Model $model)
     {
         return in_array(SoftDeletes::class, class_uses_recursive($model));

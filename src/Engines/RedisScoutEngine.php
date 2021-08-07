@@ -12,7 +12,10 @@ use Tarre\RedisScoutEngine\Exceptions\FeatureNotSupportedException;
 class RedisScoutEngine extends Engine
 {
     /**
-     * @param Collection $models
+     * Update the given model in the index.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection  $models
+     * @return void
      */
     public function update($models)
     {
@@ -54,6 +57,11 @@ class RedisScoutEngine extends Engine
         });
     }
 
+    /**
+     * Remove the given model from the index.
+     *
+     * @param Collection $models
+     */
     public function delete($models)
     {
         $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
@@ -61,6 +69,13 @@ class RedisScoutEngine extends Engine
         });
     }
 
+    /**
+     * Perform the given search on the engine.
+     *
+     * @param Builder $builder
+     * @return array|mixed
+     * @throws FeatureNotSupportedException
+     */
     public function search(Builder $builder)
     {
         $limit = $builder->limit ?: $builder->model->getPerPage();
@@ -68,6 +83,15 @@ class RedisScoutEngine extends Engine
         return $this->paginate($builder, $limit, 1);
     }
 
+    /**
+     * Perform the given search on the engine.
+     *
+     * @param Builder $builder
+     * @param int $perPage
+     * @param int $page
+     * @return array
+     * @throws FeatureNotSupportedException
+     */
     public function paginate(Builder $builder, $perPage, $page)
     {
         if ($builder->index) {
@@ -99,6 +123,12 @@ class RedisScoutEngine extends Engine
         ];
     }
 
+    /**
+     * Pluck and return the primary keys of the given results.
+     *
+     * @param mixed $results
+     * @return \Illuminate\Support\Collection
+     */
     public function mapIds($results)
     {
         return $results['results']->pluck($results['key'])->values();

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Builder;
 use Redis;
+use Tarre\RedisScoutEngine\Exceptions\FeatureNotSupportedException;
 
 
 class RedisScoutEngine extends Engine
@@ -54,6 +55,9 @@ class RedisScoutEngine extends Engine
 
     public function paginate(Builder $builder, $perPage, $page)
     {
+        if($builder->index){
+            throw new FeatureNotSupportedException('within');
+        }
         $skip = $perPage * ($page - 1);
         $take = $perPage;
         $fqdn = $this->getClassSearchableFqdn($builder->model);

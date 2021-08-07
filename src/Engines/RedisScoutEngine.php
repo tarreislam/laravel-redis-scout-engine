@@ -18,22 +18,37 @@ class RedisScoutEngine extends Engine
     {
         $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
             /*
-             * convert "toSearchableArray" to a searchable string for strpos search
+             *  prep options
              */
             $searchableString = array_values($searchable = $model->toSearchableArray());
             $searchableString = implode(' ', $searchableString);
             $scoutKeyName = $this->getScoutKeyNameWithoutTable($model);
+            $scoutKey = $model->getScoutKey();
             /*
-             * save data
+             * Configure model data to save for where and whereIns
+             */
+            $vipFields = [
+                $scoutKeyName => $scoutKey
+            ];
+            /*
+             * Support soft deletes
+             */
+            if ($this->modelHasSoftDeletes($model)) {
+                $vipFields['__soft_deleted'] = $model->trashed() ? 1 : 0;
+            }
+            /*
+             * Create model array with the models searchable items and override with vip fields.
+             */
+            $modelArr = array_merge($searchable, $vipFields);
+            /*
+             * save payload to scoutKey record
              */
             $payload = json_encode([
-                'id' => $scoutKey = $model->getScoutKey(),
-                'meta' => $model->scoutMetadata(),
-                'model' => array_merge($searchable, [$scoutKeyName => $scoutKey]),
+                'model' => $modelArr,
                 'searchable' => $searchableString,
             ]);
             /*
-             * Save
+             * Save to redis db
              */
             $redis->hset($modelKey, $scoutKey, $payload);
         });
@@ -55,9 +70,11 @@ class RedisScoutEngine extends Engine
 
     public function paginate(Builder $builder, $perPage, $page)
     {
-        if($builder->index){
+        if ($builder->index) {
             throw new FeatureNotSupportedException('within');
         }
+
+
         $skip = $perPage * ($page - 1);
         $take = $perPage;
         $fqdn = $this->getClassSearchableFqdn($builder->model);

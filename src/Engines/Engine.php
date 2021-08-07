@@ -5,6 +5,7 @@ namespace Tarre\RedisScoutEngine\Engines;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Engines\Engine as BaseEngine;
 use Redis;
 use Tarre\RedisScoutEngine\Services\RedisSearchService;
@@ -24,6 +25,11 @@ abstract class Engine extends BaseEngine
     public function __construct(RedisSearchService $rss)
     {
         $this->rss = $rss;
+    }
+
+    protected function modelHasSoftDeletes(Model $model)
+    {
+        return in_array(SoftDeletes::class, class_uses_recursive($model));
     }
 
     /**

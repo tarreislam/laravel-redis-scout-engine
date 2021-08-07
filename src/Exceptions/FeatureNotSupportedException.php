@@ -10,6 +10,6 @@ class FeatureNotSupportedException extends Exception
 {
     public function __construct($message = "", $code = 0, Throwable $previous = null)
     {
-        parent::__construct("\"$message\"" . " is not applicable with this Scout engine", $code, $previous);
+        parent::__construct("\"$message\"" . " is not supported with this Scout engine", $code, $previous);
     }
 }

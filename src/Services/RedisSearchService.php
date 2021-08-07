@@ -5,6 +5,7 @@ namespace Tarre\RedisScoutEngine\Services;
 
 use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Support\LazyCollection;
+use Tarre\RedisScoutEngine\SearchMethods;
 
 /**
  * @property \Illuminate\Redis\Connections\PhpRedisConnection $redisInstance
@@ -117,10 +118,35 @@ class RedisSearchService
      */
     protected function filterSearch($query)
     {
-        return function ($pair) use ($query) {
-            $res = $pair['searchable'];
-            return stripos($res, $query) !== false;
-        };
+        switch (config('services.redis-scout-engine.method')) {
+            default:
+            case SearchMethods::STRIPOS:
+                return function ($pair) use ($query) {
+                    $res = $pair['searchable'];
+                    return stripos($res, $query) !== false;
+                };
+            case SearchMethods::STRPOS:
+                return function ($pair) use ($query) {
+                    $res = $pair['searchable'];
+                    return strpos($res, $query) !== false;
+                };
+            case SearchMethods::WILDCARD:
+
+                $query = preg_quote($query, '/');
+                $query = str_replace('\*', '.*', $query);
+                $query = "/$query/i";
+
+                // use regex
+                return function ($pair) use ($query) {
+                    $res = $pair['searchable'];
+                    return preg_match($query, $res) !== false;
+                };
+            case SearchMethods::REGEX:
+                return function ($pair) use ($query) {
+                    $res = $pair['searchable'];
+                    return preg_match($query, $res) !== false;
+                };
+        }
     }
 
     /**

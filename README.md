@@ -25,13 +25,42 @@ REDIS_PASSWORD=null
 REDIS_PORT=6379
 ```
 
-*services.php*
+*services.php (only required if you want to change anything)* 
 ```php
-   'redis-scout-engine' => [
+<?php
+
+return [
+    // ....
+    'redis-scout-engine' => [
+        /*
+        |--------------------------------------------------------------------------
+        | What connection to use
+        |--------------------------------------------------------------------------
+        |
+        | Decide which redis connection will be used by the Engine
+        |
+        | Read more here: https://laravel.com/docs/8.x/redis
+        |
+        */
         'connection' => [
             'name' => null, // use default connection
-        ]
+        ],
+        /*
+        |--------------------------------------------------------------------------
+        | Search method
+        |--------------------------------------------------------------------------
+        |
+        | Decide which search method to use when searching
+        |
+        | * STRPOS              (case-sensitive https://php.net/strpos)
+        | * STRIPOS (DEFAULT)   (case-insensitive https://php.net/stripos)
+        | * WILDCARD            (case-insensitive preg_match but it will only accept "*" as wildcard)
+        | * REGEX              (Can cause exceptions https://php.net/preg_match)
+        */
+        'method' => \Tarre\RedisScoutEngine\SearchMethods::STRIPOS
     ]
+
+];
 ```
 
 ### Usage

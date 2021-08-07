@@ -14,7 +14,7 @@ class RedisScoutEngine extends Engine
     /**
      * Update the given model in the index.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection  $models
+     * @param \Illuminate\Database\Eloquent\Collection $models
      * @return void
      */
     public function update($models)
@@ -98,6 +98,9 @@ class RedisScoutEngine extends Engine
             throw new FeatureNotSupportedException('within');
         }
 
+        if ($builder->callback) {
+            throw new FeatureNotSupportedException('search(..., callback)');
+        }
 
         $skip = $perPage * ($page - 1);
         $take = $perPage;

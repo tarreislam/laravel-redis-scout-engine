@@ -15,6 +15,7 @@ use Tarre\RedisScoutEngine\Services\RedisSearchService;
 /*
  * "jkuhyuij <A" -Björn
  */
+
 abstract class Engine extends BaseEngine
 {
     protected $rss;
@@ -23,6 +24,19 @@ abstract class Engine extends BaseEngine
     public function __construct(RedisSearchService $rss)
     {
         $this->rss = $rss;
+    }
+
+    /**
+     * @param Model $model
+     * @return mixed|string
+     */
+    protected function getScoutKeyNameWithoutTable(Model $model)
+    {
+        $key = $model->getScoutKeyName();
+        if (strpos($key, '.')) {
+            return explode('.', $key)[1];
+        }
+        return $key;
     }
 
     /**

@@ -17,21 +17,24 @@ class RedisScoutEngine extends Engine
     {
         $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
             /*
-             * convert "toSearchableArray" to a searchable string
+             * convert "toSearchableArray" to a searchable string for strpos search
              */
-            $searchableString = array_values($model->toSearchableArray());
+            $searchableString = array_values($searchable = $model->toSearchableArray());
             $searchableString = implode(' ', $searchableString);
+            $scoutKeyName = $this->getScoutKeyNameWithoutTable($model);
             /*
-             * Save the model and the searchable string in an array
+             * save data
              */
             $payload = json_encode([
-                'model' => $model->toArray(),
+                'id' => $scoutKey = $model->getScoutKey(),
+                'meta' => $model->scoutMetadata(),
+                'model' => array_merge($searchable, [$scoutKeyName => $scoutKey]),
                 'searchable' => $searchableString,
             ]);
             /*
              * Save
              */
-            $redis->hset($modelKey, $model->getScoutKey(), $payload);
+            $redis->hset($modelKey, $scoutKey, $payload);
         });
     }
 
@@ -71,30 +74,67 @@ class RedisScoutEngine extends Engine
         return [
             'results' => $results,
             'count' => $count,
-            'key' => $builder->model->getScoutKey()
+            'key' => $this->getScoutKeyNameWithoutTable($builder->model)
         ];
     }
 
     public function mapIds($results)
     {
-        return $results['results']->pluck($results['key']);
+        return $results['results']->pluck($results['key'])->values();
     }
 
+    /**
+     * Map the given results to instances of the given model.
+     *
+     * @param Builder $builder
+     * @param mixed $results
+     * @param Model $model
+     * @return Collection|mixed
+     */
     public function map(Builder $builder, $results, $model)
     {
-        return $results['results'];
+        return $this->lazyMap($builder, $results, $model);
     }
 
+    /**
+     * Map the given results to instances of the given model via a lazy collection.
+     *
+     * @param Builder $builder
+     * @param mixed $results
+     * @param Model $model
+     * @return \Illuminate\Support\LazyCollection|mixed
+     */
     public function lazyMap(Builder $builder, $results, $model)
     {
-        return $results['results'];
+        if ($results['count'] == 0) {
+            return $model->newCollection();
+        }
+        /*
+         * Pluck ids
+         */
+        $ids = $this->mapIds($results)->toArray();
+        /*
+         * Return as models
+         */
+        return $model->getScoutModelsByIds($builder, $ids);
     }
 
+    /**
+     * Get the total count from a raw result returned by the engine.
+     *
+     * @param mixed $results
+     * @return int|mixed
+     */
     public function getTotalCount($results)
     {
         return $results['count'];
     }
 
+    /**
+     * Flush all of the model's records from the engine.
+     *
+     * @param Model $model
+     */
     public function flush($model)
     {
         $this->rss->redis()->del($this->getClassSearchableFqdn($model));
@@ -105,6 +145,10 @@ class RedisScoutEngine extends Engine
         // not used
     }
 
+    /**
+     * @param string $name
+     * @return mixed|void
+     */
     public function deleteIndex($name)
     {
         // not used

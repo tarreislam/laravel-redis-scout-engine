@@ -1,7 +1,7 @@
 <?php
 
 
-namespace Tarre\RedisScoutEngine\Service;
+namespace Tarre\RedisScoutEngine\Services;
 
 use Illuminate\Redis\Connections\PhpRedisConnection;
 use Illuminate\Support\LazyCollection;
@@ -75,7 +75,7 @@ class RedisSearchService
          */
         return $lc
             ->slice($skip, $take)
-            ->pluck('assoc')
+            ->pluck('model')
             ->values();
     }
 
@@ -102,10 +102,11 @@ class RedisSearchService
      */
     protected function mapRes()
     {
-        return function ($res) {
+        return function ($pair) {
+            $pairArray = json_decode($pair, true);
             return [
-                'res' => $res,
-                'assoc' => json_decode($res, true)
+                'searchable' => $pairArray['searchable'],
+                'model' => $pairArray['model']
             ];
         };
     }
@@ -117,7 +118,7 @@ class RedisSearchService
     protected function filterSearch($query)
     {
         return function ($pair) use ($query) {
-            $res = $pair['res'];
+            $res = $pair['searchable'];
             return stripos($res, $query) !== false;
         };
     }
@@ -129,12 +130,12 @@ class RedisSearchService
     protected function filter(array $wheres)
     {
         return function ($pair) use ($wheres) {
-            $m = $pair['assoc'];
+            $model = $pair['model'];
             /*
              * Check if at least one condition failed, then we abort
              */
             foreach ($wheres as $key => $value) {
-                if ($m[$key] !== $value) {
+                if ($model[$key] !== $value) {
                     return false;
                 }
             }
@@ -152,12 +153,12 @@ class RedisSearchService
     protected function filterArray(array $whereIns)
     {
         return function ($pair) use ($whereIns) {
-            $m = $pair['assoc'];
+            $model = $pair['model'];
             /*
              * if anything present in the array, we allow
              */
             foreach ($whereIns as $key => $value) {
-                if (in_array($m[$key], $value)) {
+                if (in_array($model[$key], $value)) {
                     return true;
                 }
             }
@@ -175,9 +176,8 @@ class RedisSearchService
     protected function sortBy($sortBy)
     {
         return function ($pair) use ($sortBy) {
-            $m = $pair['assoc'];
-
-            return $m[$sortBy];
+            $model = $pair['model'];
+            return $model[$sortBy];
         };
     }
 }

@@ -16,7 +16,22 @@ class RedisScoutEngine extends Engine
     public function update($models)
     {
         $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
-            $redis->hset($modelKey, $model->getScoutKey(), $model->toJson());
+            /*
+             * convert "toSearchableArray" to a searchable string
+             */
+            $searchableString = array_values($model->toSearchableArray());
+            $searchableString = implode(' ', $searchableString);
+            /*
+             * Save the model and the searchable string in an array
+             */
+            $payload = json_encode([
+                'model' => $model->toArray(),
+                'searchable' => $searchableString,
+            ]);
+            /*
+             * Save
+             */
+            $redis->hset($modelKey, $model->getScoutKey(), $payload);
         });
     }
 

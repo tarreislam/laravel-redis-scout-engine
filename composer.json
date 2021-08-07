@@ -19,9 +19,9 @@
     "require": {
         "laravel/scout": "~6.0|~7.0|~8.0|~9.0"
     },
-   "suggest": {
+    "suggest": {
         "predis/predis": "PHP library for Redis support (Easy to install)",
-	"php-redis": "PHP extension for Redis support (Required php extension, faster than predis)"
+        "php-redis": "PHP extension for Redis support (Required php extension, faster than predis)"
     },
     "extra": {
         "laravel": {

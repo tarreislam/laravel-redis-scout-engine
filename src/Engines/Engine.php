@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Engines\Engine as BaseEngine;
 use Redis;
-use Tarre\RedisScoutEngine\Service\RedisSearchService;
+use Tarre\RedisScoutEngine\Services\RedisSearchService;
 
 /**
  * @property RedisSearchService rss

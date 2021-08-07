@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\ServiceProvider as BaseProvider;
 use Laravel\Scout\EngineManager;
 use Tarre\RedisScoutEngine\Engines\RedisScoutEngine;
-use Tarre\RedisScoutEngine\Service\RedisSearchService;
+use Tarre\RedisScoutEngine\Services\RedisSearchService;
 
 class ServiceProvider extends BaseProvider
 {

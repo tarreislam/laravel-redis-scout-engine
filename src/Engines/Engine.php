@@ -28,6 +28,25 @@ abstract class Engine extends BaseEngine
     }
 
     /**
+     * Convert searchable indefinitely
+     *
+     * @param array $searchable
+     * @return string
+     */
+    protected function serializeToSearchableString(array $searchable)
+    {
+        $searchableString = "";
+        foreach ($searchable as $value) {
+            if (is_array($value)) {
+                $searchableString .= $this->serializeToSearchableString($value);
+            } else {
+                $searchableString .= "$value ";
+            }
+        }
+        return $searchableString;
+    }
+
+    /**
      * @param Model $model
      * @return bool
      */
@@ -65,9 +84,17 @@ abstract class Engine extends BaseEngine
     public function pipelineModels(Collection $models, callable $fn)
     {
         $this->rss->redis()->pipeline(function (Redis $pipe) use (&$models, $fn) {
-            $models->each(function (Model &$model) use (&$pipe, $fn) {
-                $modelKey = $this->getClassSearchableFqdn($model);
-                $fn($modelKey, $model, $pipe);
+            /*
+             * Determine if models have SoftDeletes, all models will have common information here.
+             */
+            $hasSoftDeletes = $this->modelHasSoftDeletes($model = $models->first());
+            $modelKey = $this->getClassSearchableFqdn($model);
+            $scoutKeyName = $this->getScoutKeyNameWithoutTable($model);
+            /*
+             *
+             */
+            $models->each(function (Model &$model) use (&$pipe, $scoutKeyName, $modelKey, $hasSoftDeletes, $fn) {
+                $fn($scoutKeyName, $modelKey, $hasSoftDeletes, $model, $pipe);
             });
         });
     }

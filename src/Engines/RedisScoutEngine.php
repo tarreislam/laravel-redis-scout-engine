@@ -19,24 +19,22 @@ class RedisScoutEngine extends Engine
      */
     public function update($models)
     {
-        $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
+        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, Redis $redis) {
             /*
              *  prep options
              */
-            $searchableString = array_values($searchable = $model->toSearchableArray());
-            $searchableString = implode(' ', $searchableString);
-            $scoutKeyName = $this->getScoutKeyNameWithoutTable($model);
+            $searchableString = $this->serializeToSearchableString($searchable = $model->toSearchableArray());
             $scoutKey = $model->getScoutKey();
             /*
-             * Configure model data to save for where and whereIns
+             * Define vip fields for later use
              */
             $vipFields = [
                 $scoutKeyName => $scoutKey
             ];
             /*
-             * Support soft deletes
+             * Check if we have softdeletes
              */
-            if ($this->modelHasSoftDeletes($model)) {
+            if ($hasSoftDeletes) {
                 $vipFields['__soft_deleted'] = $model->trashed() ? 1 : 0;
             }
             /*
@@ -64,7 +62,7 @@ class RedisScoutEngine extends Engine
      */
     public function delete($models)
     {
-        $this->pipelineModels($models, function (string $modelKey, Model $model, Redis $redis) {
+        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, Redis $redis) {
             $redis->hDel($modelKey, $model->getScoutKey());
         });
     }

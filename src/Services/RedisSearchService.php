@@ -40,13 +40,13 @@ class RedisSearchService
          * Handle wheres
          */
         if (!!$wheres) {
-            $lc = $lc->filter($this->filter($wheres));
+            $lc = $lc->filter($this->handleWheres($wheres));
         }
         /*
          * Handle whereIns
          */
         if (!!$whereIns) {
-            $lc = $lc->filter($this->filterArray($whereIns));
+            $lc = $lc->filter($this->handleWhereIns($whereIns));
         }
         /*
          * Handle orders
@@ -65,7 +65,7 @@ class RedisSearchService
          * Handle searches
          */
         if ($query) {
-            $lc = $lc->filter($this->filterSearch($query));
+            $lc = $lc->filter($this->handleSearch($query));
         }
         /*
          * Get count of results
@@ -116,35 +116,28 @@ class RedisSearchService
      * @param $query
      * @return \Closure
      */
-    protected function filterSearch($query)
+    protected function handleSearch($query)
     {
         switch (config('services.redis-scout-engine.method')) {
             default:
             case SearchMethods::STRIPOS:
                 return function ($pair) use ($query) {
-                    $res = $pair['searchable'];
-                    return stripos($res, $query) !== false;
+                    return stripos($pair['searchable'], $query) !== false;
                 };
             case SearchMethods::STRPOS:
                 return function ($pair) use ($query) {
-                    $res = $pair['searchable'];
-                    return strpos($res, $query) !== false;
+                    return strpos($pair['searchable'], $query) !== false;
                 };
             case SearchMethods::WILDCARD:
-
                 $query = preg_quote($query, '/');
                 $query = str_replace('\*', '.*', $query);
                 $query = "/$query/i";
-
-                // use regex
                 return function ($pair) use ($query) {
-                    $res = $pair['searchable'];
-                    return preg_match($query, $res) !== false;
+                    return preg_match($query, $pair['searchable']);
                 };
             case SearchMethods::REGEX:
                 return function ($pair) use ($query) {
-                    $res = $pair['searchable'];
-                    return preg_match($query, $res) !== false;
+                    return preg_match($query, $pair['searchable']);
                 };
         }
     }
@@ -153,7 +146,7 @@ class RedisSearchService
      * @param array $wheres
      * @return \Closure
      */
-    protected function filter(array $wheres)
+    protected function handleWheres(array $wheres)
     {
         return function ($pair) use ($wheres) {
             $model = $pair['model'];
@@ -176,7 +169,7 @@ class RedisSearchService
      * @param array $whereIns
      * @return \Closure
      */
-    protected function filterArray(array $whereIns)
+    protected function handleWhereIns(array $whereIns)
     {
         return function ($pair) use ($whereIns) {
             $model = $pair['model'];

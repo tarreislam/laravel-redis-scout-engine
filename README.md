@@ -55,7 +55,7 @@ return [
         | * STRPOS              (case-sensitive https://php.net/strpos)
         | * STRIPOS (DEFAULT)   (case-insensitive https://php.net/stripos)
         | * WILDCARD            (case-insensitive preg_match but it will only accept "*" as wildcard)
-        | * REGEX              (Can cause exceptions https://php.net/preg_match)
+        | * REGEX               (Can cause exceptions https://php.net/preg_match)
         */
         'method' => \Tarre\RedisScoutEngine\SearchMethods::STRIPOS
     ]

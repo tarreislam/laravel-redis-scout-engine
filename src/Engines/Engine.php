@@ -39,7 +39,7 @@ abstract class Engine extends BaseEngine
         foreach ($searchable as $value) {
             if (is_array($value)) {
                 $searchableString .= $this->serializeToSearchableString($value);
-            } else {
+            } elseif ((is_numeric($value) && strlen($value) > 1) || is_string($value)) { // only accept strings and numeric values greater than 1 charachter
                 $searchableString .= "$value ";
             }
         }

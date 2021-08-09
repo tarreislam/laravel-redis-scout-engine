@@ -3,11 +3,12 @@
 
 namespace Tarre\RedisScoutEngine\Engines;
 
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection as SupportCollection;
 use Laravel\Scout\Engines\Engine as BaseEngine;
-use Redis;
 use Tarre\RedisScoutEngine\Services\RedisSearchService;
 
 /**
@@ -30,19 +31,35 @@ abstract class Engine extends BaseEngine
     /**
      * Convert searchable indefinitely
      *
-     * @param array $searchable
+     * @param $searchable
      * @return string
      */
-    protected function serializeToSearchableString(array $searchable)
+    protected function serializeToSearchableString($searchable)
     {
         $searchableString = "";
+
+        if (
+            $searchable instanceof EloquentCollection ||
+            $searchable instanceof SupportCollection ||
+            $searchable instanceof Arrayable
+        ) {
+            $searchable = $searchable->toArray();
+        }
+
         foreach ($searchable as $value) {
-            if (is_array($value)) {
-                $searchableString .= $this->serializeToSearchableString($value);
-            } elseif ((is_numeric($value) && strlen($value) > 1) || is_string($value)) { // only accept strings and numeric values greater than 1 charachter
+            if ((is_numeric($value) && strlen($value) > 1) || is_string($value)) { // only accept strings and numeric values greater than 1 char
                 $searchableString .= "$value ";
+            } elseif (is_array($value)) {
+                $searchableString .= $this->serializeToSearchableString($value);
+            } elseif (
+                $value instanceof EloquentCollection ||
+                $value instanceof SupportCollection ||
+                $value instanceof Arrayable
+            ) {
+                $searchableString .= $this->serializeToSearchableString($value->toArray());
             }
         }
+
         return $searchableString;
     }
 
@@ -78,12 +95,12 @@ abstract class Engine extends BaseEngine
     }
 
     /**
-     * @param Collection $models
+     * @param EloquentCollection $models
      * @param callable $fn
      */
-    public function pipelineModels(Collection $models, callable $fn)
+    public function pipelineModels(EloquentCollection $models, callable $fn)
     {
-        $this->rss->redis()->pipeline(function (Redis $pipe) use (&$models, $fn) {
+        $this->rss->redis()->pipeline(function ($pipe) use (&$models, $fn) {
             /*
              * Determine if models have SoftDeletes, all models will have common information here.
              */

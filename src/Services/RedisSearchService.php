@@ -3,18 +3,18 @@
 
 namespace Tarre\RedisScoutEngine\Services;
 
-use Illuminate\Redis\Connections\PhpRedisConnection;
+use Illuminate\Contracts\Redis\Connection as GenericRedisConnection;
 use Illuminate\Support\LazyCollection;
 use Tarre\RedisScoutEngine\SearchMethods;
 
 /**
- * @property \Illuminate\Redis\Connections\PhpRedisConnection $redisInstance
+ * @property \Illuminate\Contracts\Redis\Connection $redisInstance
  */
 class RedisSearchService
 {
     protected $redisInstance;
 
-    public function __construct(PhpRedisConnection $redisInstance)
+    public function __construct(GenericRedisConnection $redisInstance)
     {
         $this->redisInstance = $redisInstance;
     }
@@ -82,7 +82,7 @@ class RedisSearchService
 
     /**
      * The redis instance for the service
-     * @return \Illuminate\Redis\Connections\PhpRedisConnection
+     * @return \Illuminate\Contracts\Redis\Connection
      */
     public function redis()
     {

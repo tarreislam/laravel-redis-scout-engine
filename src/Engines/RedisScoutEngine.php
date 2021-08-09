@@ -5,7 +5,6 @@ namespace Tarre\RedisScoutEngine\Engines;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Builder;
-use Redis;
 use Tarre\RedisScoutEngine\Exceptions\FeatureNotSupportedException;
 
 
@@ -19,7 +18,7 @@ class RedisScoutEngine extends Engine
      */
     public function update($models)
     {
-        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, Redis $redis) {
+        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, $pipe) {
             /*
              *  prep options
              */
@@ -51,19 +50,19 @@ class RedisScoutEngine extends Engine
             /*
              * Save to redis db
              */
-            $redis->hset($modelKey, $scoutKey, $payload);
+            $pipe->hset($modelKey, $scoutKey, $payload);
         });
     }
 
     /**
      * Remove the given model from the index.
      *
-     * @param Collection $models
+     * @param Collection $modelse
      */
     public function delete($models)
     {
-        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, Redis $redis) {
-            $redis->hDel($modelKey, $model->getScoutKey());
+        $this->pipelineModels($models, function (string $scoutKeyName, string $modelKey, bool $hasSoftDeletes, Model $model, $pipe) {
+            $pipe->hDel($modelKey, $model->getScoutKey());
         });
     }
 

@@ -25,13 +25,19 @@ REDIS_PASSWORD=null
 REDIS_PORT=6379
 ```
 
-*services.php (only required if you want to change anything)* 
+*scout.php (only required if you want to change anything)* 
 ```php
 <?php
 
 return [
     // ....
-    'redis-scout-engine' => [
+    /*
+    |--------------------------------------------------------------------------
+    | Redis configuration
+    |--------------------------------------------------------------------------
+    |
+    */
+    'redis' => [
         /*
         |--------------------------------------------------------------------------
         | What connection to use

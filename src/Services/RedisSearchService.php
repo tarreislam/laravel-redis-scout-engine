@@ -118,7 +118,7 @@ class RedisSearchService
      */
     protected function handleSearch($query)
     {
-        switch (config('services.redis-scout-engine.method')) {
+        switch (config('scout.redis.method')) {
             default:
             case SearchMethods::STRIPOS:
                 return function ($pair) use ($query) {

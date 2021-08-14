@@ -16,7 +16,7 @@ class ServiceProvider extends BaseProvider
             /*
              * Create redis instance for engine
              */
-            $redis = Redis::connection(config('services.redis-scout-engine.connection.name'));
+            $redis = Redis::connection(config('scout.redis.connection.name'));
             /*
              * Create Redis Search service with the given redis instance
              */

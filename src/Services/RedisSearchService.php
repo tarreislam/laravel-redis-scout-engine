@@ -24,13 +24,12 @@ class RedisSearchService
      * @param string $query
      * @param array $wheres
      * @param array $whereIns
-     * @param array $orders
      * @param $skip
      * @param $take
      * @param int $count
      * @return LazyCollection
      */
-    public function search(string $fqdn, $query, array $wheres, array $whereIns, array $orders, $skip, $take, &$count)
+    public function search(string $fqdn, $query, array $wheres, array $whereIns, $skip, $take, &$count)
     {
         /*
          * Initialize lazy collection
@@ -49,19 +48,6 @@ class RedisSearchService
             $lc = $lc->filter($this->handleWhereIns($whereIns));
         }
         /*
-         * Handle orders
-         */
-        foreach ($orders as $order) {
-            switch ($order['direction']) {
-                case 'asc':
-                    $lc = $lc->sortBy($this->sortBy($order['column']));
-                    break;
-                case 'desc':
-                    $lc = $lc->sortByDesc($this->sortBy($order['column']));
-                    break;
-            }
-        }
-        /*
          * Handle searches
          */
         if ($query) {
@@ -76,8 +62,7 @@ class RedisSearchService
          */
         return $lc
             ->slice($skip, $take)
-            ->pluck('model')
-            ->values();
+            ->pluck('model');
     }
 
     /**
@@ -185,18 +170,6 @@ class RedisSearchService
              * ignore record
              */
             return false;
-        };
-    }
-
-    /**
-     * @param $sortBy
-     * @return \Closure
-     */
-    protected function sortBy($sortBy)
-    {
-        return function ($pair) use ($sortBy) {
-            $model = $pair['model'];
-            return $model[$sortBy];
         };
     }
 }

@@ -110,7 +110,6 @@ class RedisScoutEngine extends Engine
                 $builder->query,
                 $builder->wheres,
                 $builder->whereIns,
-                $builder->orders,
                 $skip,
                 $take,
                 $count
@@ -131,7 +130,7 @@ class RedisScoutEngine extends Engine
      */
     public function mapIds($results)
     {
-        return $results['results']->pluck($results['key'])->values();
+        return $results['results']->pluck($results['key']);
     }
 
     /**
@@ -165,9 +164,26 @@ class RedisScoutEngine extends Engine
          */
         $ids = $this->mapIds($results)->toArray();
         /*
-         * Return as models
+         * Fetch actual models
          */
-        return $model->getScoutModelsByIds($builder, $ids);
+        $result = $model->getScoutModelsByIds($builder, $ids);
+        /*
+        * Sort result
+        */
+        foreach ($builder->orders as $order) {
+            switch ($order['direction']) {
+                case 'asc':
+                    $result = $result->sortBy($order['column']);
+                    break;
+                case 'desc':
+                    $result = $result->sortByDesc($order['column']);
+                    break;
+            }
+        }
+        /*
+         * Return normalized result
+         */
+        return $result->values();
     }
 
     /**

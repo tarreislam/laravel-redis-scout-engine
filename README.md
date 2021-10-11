@@ -64,6 +64,16 @@ return [
         | * REGEX               (Can cause exceptions https://php.net/preg_match)
         */
         'method' => \Tarre\RedisScoutEngine\SearchMethods::STRIPOS
+        /*
+        |--------------------------------------------------------------------------
+        | orderBy sort options
+        |--------------------------------------------------------------------------
+        |
+        | Read more about sort options on PHPs official docs
+        |
+        | https://www.php.net/manual/en/function.sort.php
+        */
+        'sort_options' => SORT_NATURAL
     ]
 
 ];

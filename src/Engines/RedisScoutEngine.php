@@ -110,6 +110,7 @@ class RedisScoutEngine extends Engine
                 $builder->query,
                 $builder->wheres,
                 $builder->whereIns,
+                $builder->orders,
                 $skip,
                 $take,
                 $count
@@ -164,26 +165,15 @@ class RedisScoutEngine extends Engine
          */
         $ids = $this->mapIds($results)->toArray();
         /*
-         * Fetch actual models
+         * Fetch actual models (We ignore Laravels methods since it does not take our order into account)
          */
-        $result = $model->getScoutModelsByIds($builder, $ids);
-        /*
-        * Sort result
-        */
-        foreach ($builder->orders as $order) {
-            switch ($order['direction']) {
-                case 'asc':
-                    $result = $result->sortBy($order['column']);
-                    break;
-                case 'desc':
-                    $result = $result->sortByDesc($order['column']);
-                    break;
-            }
-        }
+        // $result = $model->getScoutModelsByIds($builder, $ids);
+        // return $result->values();
+        $result = $this->queryScoutModelsById($builder, $model, $ids);
         /*
          * Return normalized result
          */
-        return $result->values();
+        return $result;
     }
 
     /**
@@ -219,5 +209,40 @@ class RedisScoutEngine extends Engine
     public function deleteIndex($name)
     {
         // not used
+    }
+
+    /**
+     * Similar to the searchable trait with the same method name, but also includes "OrderBy FIELD"
+     * @param $result
+     * @param Builder $builder
+     * @return \Illuminate\Support\LazyCollection|mixed
+     */
+    protected function queryScoutModelsById(Builder $builder, Model $model, array $ids)
+    {
+        $query = $model::usesSoftDelete()
+            ? $model->withTrashed() : $model->newQuery();
+
+        if ($builder->queryCallback) {
+            call_user_func($builder->queryCallback, $query);
+        }
+        /*
+         * Get ids
+         */
+        $query = $query->whereIn(
+            $model->getScoutKeyName(), $ids
+        );
+        /*
+         * Make sure the ordered result displays correctly
+         */
+        if (count($builder->orders) > 0) {
+            $idsString = implode(',', $ids);
+            foreach ($builder->orders as $order) {
+                $query = $query->orderByRaw(sprintf("FIELD(%s, %s) %s", $model->getScoutKeyName(), $idsString, $order['direction']));
+            }
+        }
+        /*
+         * Return results
+         */
+        return $query->get();
     }
 }

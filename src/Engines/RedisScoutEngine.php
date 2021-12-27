@@ -75,8 +75,13 @@ class RedisScoutEngine extends Engine
      */
     public function search(Builder $builder)
     {
+        /*
+         * Set limit
+         */
         $limit = $builder->limit ?: $builder->model->getPerPage();
-
+        /*
+         * Paginate result
+         */
         return $this->paginate($builder, $limit, 1);
     }
 
@@ -95,8 +100,11 @@ class RedisScoutEngine extends Engine
             throw new FeatureNotSupportedException('within');
         }
 
-        if ($builder->callback) {
-            throw new FeatureNotSupportedException('search(..., callback)');
+        /*
+        * Handle callbacks
+        */
+        if (is_callable($builder->callback)) {
+            ($builder->callback)($this->callback);
         }
 
         $skip = $perPage * ($page - 1);
@@ -170,6 +178,12 @@ class RedisScoutEngine extends Engine
         // $result = $model->getScoutModelsByIds($builder, $ids);
         // return $result->values();
         $result = $this->queryScoutModelsById($builder, $model, $ids);
+        /*
+         * map results
+         */
+        if (is_callable($this->callback->callableMapResult)) {
+            $result = $result->map($this->callback->callableMapResult);
+        }
         /*
          * Return normalized result
          */

@@ -82,3 +82,82 @@ return [
 ### Usage
 
 See [official docs for usage](https://laravel.com/docs/8.x/scout#searching)
+
+#### Callback for search
+
+If you to filter the results for `get` and `paginate` you can use the `\Tarre\RedisScoutEngine\Callback`
+```php
+use App\Models\User;
+use Tarre\RedisScoutEngine\Callback;
+
+User::search('xxxx', fn(Callback $cb) => $cb->mapResult(fn(User $user) => ['id' => $user->id, 'name' => $user->name, 'abc' => 123]))->paginate()
+```
+```json
+{
+    "current_page":1,
+    "data":[
+        {
+            "id":1,
+            "name":"Kade Trantow",
+            "abc":123
+        },
+        {
+            "id":73,
+            "name":"Kaden Gulgowski",
+            "abc":123
+        },
+        {
+            "id":722,
+            "name":"Kade Goyette",
+            "abc":123
+        },
+        {
+            "id":1836,
+            "name":"Dr. Kade Ankunding",
+            "abc":123
+        },
+        {
+            "id":3260,
+            "name":"Kade Murray",
+            "abc":123
+        },
+        {
+            "id":8916,
+            "name":"Prof. Kade Howe",
+            "abc":123
+        },
+        {
+            "id":9889,
+            "name":"Kade Spinka",
+            "abc":123
+        }
+    ],
+    "first_page_url":"http:\/\/localhost?query=kade&page=1",
+    "from":1,
+    "last_page":1,
+    "last_page_url":"http:\/\/localhost?query=kade&page=1",
+    "links":[
+        {
+            "url":null,
+            "label":"&laquo; Previous",
+            "active":false
+        },
+        {
+            "url":"http:\/\/localhost?query=kade&page=1",
+            "label":"1",
+            "active":true
+        },
+        {
+            "url":null,
+            "label":"Next &raquo;",
+            "active":false
+        }
+    ],
+    "next_page_url":null,
+    "path":"http:\/\/localhost",
+    "per_page":15,
+    "prev_page_url":null,
+    "to":7,
+    "total":7
+}
+```

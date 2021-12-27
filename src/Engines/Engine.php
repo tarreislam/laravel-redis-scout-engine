@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Collection as SupportCollection;
 use Laravel\Scout\Engines\Engine as BaseEngine;
+use Tarre\RedisScoutEngine\Callback;
 use Tarre\RedisScoutEngine\Services\RedisSearchService;
 
 /**
@@ -22,10 +23,12 @@ abstract class Engine extends BaseEngine
 {
     protected $rss;
     protected $prefix = 'redis-scout-engine.';
+    protected $callback;
 
     public function __construct(RedisSearchService $rss)
     {
         $this->rss = $rss;
+        $this->callback = new Callback;
     }
 
     /**

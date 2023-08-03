@@ -251,7 +251,7 @@ class RedisScoutEngine extends Engine
         if (count($builder->orders) > 0) {
             $idsString = implode(',', $ids);
             foreach ($builder->orders as $order) {
-                $query = $query->orderByRaw(sprintf("FIELD(%s, %s) %s", $model->getScoutKeyName(), $idsString, $order['direction']));
+                $query = $query->orderByRaw(sprintf("FIELD(%s, %s)", $model->getScoutKeyName(), $idsString, $order['direction']));
             }
         }
         /*

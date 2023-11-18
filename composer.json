@@ -17,7 +17,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "laravel/scout": "~9.0"
+        "laravel/scout": "~9.0|~10.0"
     },
     "suggest": {
         "predis/predis": "PHP library for Redis support (Easy to install)",

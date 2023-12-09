@@ -95,7 +95,26 @@ class RedisSearchService
      */
     protected function hGetAll($fqdn): array
     {
-        return $this->redisInstance->hGetAll($fqdn);
+        return function () use ($fqdn) {
+            $iterator = null;
+            $count = (int)config('scout.redis.scan_chunk', 1000);
+
+            while (true) {
+                $result = $this->redisInstance->hscan($fqdn, $iterator, [
+                    'count' => $count,
+                ]);
+
+                if ($result === false) {
+                    break;
+                }
+
+                $iterator = $result[0];
+
+                foreach ($result[1] as $key => $value) {
+                    yield $key => $value;
+                }
+            }
+        };
     }
 
     /**

@@ -45,12 +45,22 @@ return [
         |
         | Decide which redis connection will be used by the Engine
         |
-        | Read more here: https://laravel.com/docs/8.x/redis
+        | Read more here: https://laravel.com/docs/10.x/redis
         |
         */
         'connection' => [
             'name' => null, // use default connection
         ],
+        /*
+        |--------------------------------------------------------------------------
+        | Chunk size for redis hScan
+        |--------------------------------------------------------------------------
+        |
+        |
+        | Read more here: https://redis.io/commands/hscan
+        |
+        */
+        'scan_chunk' => 1000,
         /*
         |--------------------------------------------------------------------------
         | Search method
@@ -63,7 +73,7 @@ return [
         | * WILDCARD            (case-insensitive preg_match but it will only accept "*" as wildcard)
         | * REGEX               (Can cause exceptions https://php.net/preg_match)
         */
-        'method' => \Tarre\RedisScoutEngine\SearchMethods::STRIPOS
+        'method' => \Tarre\RedisScoutEngine\SearchMethods::STRIPOS,
         /*
         |--------------------------------------------------------------------------
         | orderBy sort options

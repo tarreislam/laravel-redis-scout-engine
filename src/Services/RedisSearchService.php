@@ -91,9 +91,8 @@ class RedisSearchService
 
     /**
      * @param $fqdn
-     * @return array
      */
-    protected function hGetAll($fqdn): array
+    protected function hGetAll($fqdn)
     {
         return function () use ($fqdn) {
             $iterator = null;

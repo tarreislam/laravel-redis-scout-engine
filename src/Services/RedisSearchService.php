@@ -166,6 +166,59 @@ class RedisSearchService
      */
     protected function handleWheres(array $wheres)
     {
+        // allow us to do greater than etc, its hacky but whatever i need it
+        // allows for: $builder->where('salary', "\$OP:GTE:450")
+        // enable by settings config/scout.php -> redis ['allow_advanced_operators' => true]
+        if (config('scout.redis.allow_advanced_operators', false)) {
+            return function ($pair) use ($wheres) {
+                $model = $pair['model'];
+                /*
+                 * Check if at least one condition failed, then we abort
+                 */
+                foreach ($wheres as $key => $value) {
+                    $modelValue = $model[$key];
+
+                    if (preg_match('/^\$OP:(EQQ|NEQ|GTE|LTE):(.*)/', $value, $matches)) {
+                        $operator = $matches[1];
+                        $matchedValue = $matches[2];
+
+
+                        switch ($operator) {
+                            case 'EQQ':
+                                if (($modelValue == $matchedValue)) {
+                                    continue 2; // we do not return true because we might have more conditions to test
+                                } else {
+                                    return false;
+                                }
+                            case 'NEQ':
+                                if ($modelValue != $matchedValue) {
+                                    continue 2; // we do not return true because we might have more conditions to test
+                                } else {
+                                    return false;
+                                }
+                            case 'GTE':
+                                if ($modelValue >= $matchedValue) {
+                                    continue 2; // we do not return true because we might have more conditions to test
+                                } else {
+                                    return false;
+                                }
+                            case 'LTE':
+                                if ($modelValue <= $matchedValue) {
+                                    continue 2;
+                                } else {
+                                    return false;
+                                }
+                        }
+                    } else if ($modelValue !== $value) { // default behaviour
+                        return false;
+                    }
+                }
+                /*
+                 * All conditions passed
+                 */
+                return true;
+            };
+        }
         return function ($pair) use ($wheres) {
             $model = $pair['model'];
             /*
@@ -187,7 +240,8 @@ class RedisSearchService
      * @param array $whereIns
      * @return \Closure
      */
-    protected function handleWhereIns(array $whereIns)
+    protected
+    function handleWhereIns(array $whereIns)
     {
         return function ($pair) use ($whereIns) {
             $model = $pair['model'];
@@ -210,7 +264,8 @@ class RedisSearchService
      * @param $sortBy
      * @return \Closure
      */
-    protected function sortBy($sortBy)
+    protected
+    function sortBy($sortBy)
     {
         return function ($pair) use ($sortBy) {
             $model = $pair['model'];
